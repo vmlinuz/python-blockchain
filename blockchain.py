@@ -197,6 +197,7 @@ def get_last_blockchain_value():
 
 
 def verify_transaction(transaction):
+    """Verify a transaction by checking whether the sender has sufficient coins."""
     sender_balance = get_balance(transaction["sender"])
     return sender_balance >= transaction["amount"]
 
@@ -263,6 +264,7 @@ def get_transaction_value():
 
 
 def get_user_choice():
+    """Prompts the user for its choice and return it."""
     user_input = input("Your choice: ")
     return user_input
 
@@ -293,11 +295,13 @@ def verify_chain():
 
 
 def verify_open_transactions():
+    """Verifies all open transactions."""
     return all([verify_transaction(tx) for tx in open_transactions])
 
 
 waiting_for_input = True
 
+# Main loop for the user interface
 while waiting_for_input:
     print("Please choose")
     print("1: Add a new transaction value")
