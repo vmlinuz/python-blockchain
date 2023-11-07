@@ -1,3 +1,5 @@
+"""Provides a class to manage transactions in the blockchain."""
+
 from collections import OrderedDict
 
 from utility.printable import Printable

@@ -1,3 +1,5 @@
+"""Provides helper methods for hashing data."""
+
 import hashlib
 import json
 

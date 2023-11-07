@@ -1,3 +1,5 @@
+"""Defines the Block class, which represents a single block in the blockchain."""
+
 from time import time
 
 from utility.printable import Printable

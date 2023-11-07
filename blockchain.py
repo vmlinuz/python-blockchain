@@ -1,3 +1,5 @@
+"""Provides the Blockchain class."""
+
 import functools
 import json
 import pickle

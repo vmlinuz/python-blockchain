@@ -1,3 +1,5 @@
+"""This module creates a blockchain and allows the user to interact with it via a menu in the terminal."""
+
 from blockchain import Blockchain
 from utility.verification import Verification
 

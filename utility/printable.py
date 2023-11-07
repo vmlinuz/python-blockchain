@@ -1,3 +1,6 @@
+"""This module contains the Printable class."""
+
+
 class Printable:
     """A base class which implements printing functionality."""
 
