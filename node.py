@@ -79,5 +79,6 @@ class Node:
             print(f"Balance of {self.id} is {self.blockchain.get_balance():6.2f}")
 
 
-node = Node()
-node.listen_for_input()
+if __name__ == "__main__":
+    node = Node()
+    node.listen_for_input()
