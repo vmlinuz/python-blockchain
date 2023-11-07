@@ -3,9 +3,9 @@ import json
 import pickle
 
 from block import Block
-from hash_util import hash_block
 from transaction import Transaction
-from verification import Verification
+from utility.hash_util import hash_block
+from utility.verification import Verification
 
 # The reward we give to miners (for creating a new block)
 MINING_REWARD = 10
@@ -15,6 +15,10 @@ blockchain_file_pickle = "blockchain.pickle"
 
 
 class Blockchain:
+    """The Blockchain class manages the chain of blocks as well as open transactions and the node on which it's
+    running.
+    """
+
     def __init__(self, hosting_node_id):
         # Our starting block for the blockchain
         genesis_block = Block(0, "", [], 100, 0)

@@ -1,7 +1,9 @@
-from hash_util import hash_block, hash_string_256
+from utility.hash_util import hash_block, hash_string_256
 
 
 class Verification:
+    """A helper class which offer various static and class-based verification and validation methods."""
+
     @staticmethod
     def valid_proof(transactions, last_hash, proof):
         """Validates the proof: Does hash(last_hash, proof) contain 2 leading zeros?

@@ -1,10 +1,10 @@
-from uuid import uuid4
-
 from blockchain import Blockchain
-from verification import Verification
+from utility.verification import Verification
 
 
 class Node:
+    """The node which runs the local blockchain instance."""
+
     def __init__(self):
         # self.id = str(uuid4())
         self.id = "Gyula"
