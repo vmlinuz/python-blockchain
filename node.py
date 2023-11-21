@@ -2,6 +2,7 @@
 
 from blockchain import Blockchain
 from utility.verification import Verification
+from wallet import Wallet
 
 
 class Node:
@@ -9,8 +10,9 @@ class Node:
 
     def __init__(self):
         # self.id = str(uuid4())
-        self.id = "Gyula"
-        self.blockchain = Blockchain(self.id)
+        self.wallet = Wallet()
+        self.wallet.create_keys()
+        self.blockchain = Blockchain(self.wallet.public_key)
 
     def get_transaction_value(self):
         """Returns the input of the user (a new transaction amount) as a float."""
@@ -42,20 +44,24 @@ class Node:
             print("2: Mine a new block")
             print("3: Output the blockchain blocks")
             print("4: Check open transaction validity")
+            print("5: Create wallet")
+            print("6: Load wallet")
+            print("7: Save keys")
             print("q: Quit")
             user_choice = self.get_user_choice()
             match user_choice:
                 case "1":
                     recepient, amount = self.get_transaction_value()
                     if self.blockchain.add_transaction(
-                        recepient, self.id, amount=amount
+                        recepient, self.wallet.public_key, amount=amount
                     ):
                         print("Added transaction!")
                     else:
                         print("Transaction failed!")
                     print(self.blockchain.open_transactions)
                 case "2":
-                    self.blockchain.mine_block()
+                    if not self.blockchain.mine_block():
+                        print("Mining failed. Got no wallet?")
                 case "3":
                     self.print_blockchain_elements()
                 case "4":
@@ -66,6 +72,14 @@ class Node:
                         print("All transactions are valid!")
                     else:
                         print("There are invalid transactions!")
+                case "5":
+                    self.wallet.create_keys()
+                    self.blockchain = Blockchain(self.wallet.public_key)
+                case "6":
+                    self.wallet.load_keys()
+                    self.blockchain = Blockchain(self.wallet.public_key)
+                case "7":
+                    self.wallet.save_keys()
                 case "q":
                     # This will lead to the loop to exist because it's running condition becomes False
                     waiting_for_input = False
@@ -76,7 +90,9 @@ class Node:
                 print("Invalid blockchain!")
                 # Break out of the loop
                 waiting_for_input = False
-            print(f"Balance of {self.id} is {self.blockchain.get_balance():6.2f}")
+            print(
+                f"Balance of {self.wallet.public_key} is {self.blockchain.get_balance():6.2f}"
+            )
 
 
 if __name__ == "__main__":

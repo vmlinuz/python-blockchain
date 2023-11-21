@@ -205,6 +205,8 @@ class Blockchain:
         #     "recipient": recipient,
         #     "amount": amount
         # }
+        if self.hosting_node is None:
+            return False
         transaction = Transaction(sender, recipient, amount)
         if Verification.verify_transaction(transaction, self.get_balance):
             self.__open_transactions.append(transaction)
@@ -215,6 +217,8 @@ class Blockchain:
     def mine_block(self):
         """Create a new block and add open transactions to it."""
         # Fetch the currently last block of the blockchain
+        if self.hosting_node is None:
+            return False
         last_block = self.get_last_blockchain_value()
         # Hash the last block (=> to be able to compare it to the stored hash value)
         hashed_block = hash_block(last_block)
@@ -223,6 +227,7 @@ class Blockchain:
         reward_transaction = Transaction("MINING", self.hosting_node, MINING_REWARD)
         # Copy transaction instead of manipulating the original open_transactions list
         # This ensures that if for some reason the mining should fail, we don't have the reward transaction stored in the
+        # open transactions
         copied_open_transactions = self.__open_transactions[:]
         copied_open_transactions.append(reward_transaction)
         block = Block(
