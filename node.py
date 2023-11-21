@@ -16,9 +16,9 @@ class Node:
 
     def get_transaction_value(self):
         """Returns the input of the user (a new transaction amount) as a float."""
-        tx_recepient = input("Enter the recepient of the transaction: ")
+        tx_recipient = input("Enter the recipient of the transaction: ")
         tx_amount = float(input("Your transaction amount please: "))
-        return tx_recepient, tx_amount
+        return tx_recipient, tx_amount
 
     def get_user_choice(self):
         """Prompts the user for its choice and return it."""
@@ -46,14 +46,18 @@ class Node:
             print("4: Check open transaction validity")
             print("5: Create wallet")
             print("6: Load wallet")
-            print("7: Save keys")
+            print("7: Save wallet")
             print("q: Quit")
             user_choice = self.get_user_choice()
             match user_choice:
                 case "1":
-                    recepient, amount = self.get_transaction_value()
+                    recipient, amount = self.get_transaction_value()
+                    # Add the transaction amount to the blockchain
+                    signature = self.wallet.sign_transaction(
+                        self.wallet.public_key, recipient, amount
+                    )
                     if self.blockchain.add_transaction(
-                        recepient, self.wallet.public_key, amount=amount
+                        recipient, self.wallet.public_key, signature, amount=amount
                     ):
                         print("Added transaction!")
                     else:
