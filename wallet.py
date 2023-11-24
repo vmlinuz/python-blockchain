@@ -18,27 +18,33 @@ class Wallet:
         )
 
     def save_keys(self):
+        """Saves the keys to a file (wallet.txt)."""
         if self.public_key is not None and self.private_key is not None:
             try:
                 with open("wallet.txt", mode="w") as f:
                     f.write(self.private_key)
                     f.write("\n")
                     f.write(self.public_key)
+                return True
             except (IOError, IndexError):
                 print("Saving wallet failed...")
+                return False
 
     def load_keys(self):
+        """Loads the keys from the wallet.txt file into the wallet."""
         try:
             with open("wallet.txt", mode="r") as f:
                 keys = f.readlines()
                 self.private_key = keys[0][:-1]
                 self.public_key = keys[1]
+            return True
         except (IOError, IndexError):
             print("Loading wallet failed...")
+            return False
 
     @staticmethod
     def generate_keys():
-        private_key = RSA.generate(1024, Cryptodome.Random.new().read)
+        private_key = RSA.generate(1024, Crypto.Random.new().read)
         public_key = private_key.publickey()
         return (
             binascii.hexlify(private_key.exportKey(format="DER")).decode("ascii"),
