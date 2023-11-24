@@ -222,7 +222,7 @@ class Blockchain:
         """Create a new block and add open transactions to it."""
         # Fetch the currently last block of the blockchain
         if self.hosting_node is None:
-            return False
+            return None
         last_block = self.get_last_blockchain_value()
         # Hash the last block (=> to be able to compare it to the stored hash value)
         hashed_block = hash_block(last_block)
@@ -235,7 +235,7 @@ class Blockchain:
         copied_open_transactions = self.__open_transactions[:]
         for tx in copied_open_transactions:
             if not Wallet.verify_transaction(tx):
-                return False
+                return None
         copied_open_transactions.append(reward_transaction)
         block = Block(
             len(self.__chain),
@@ -246,4 +246,4 @@ class Blockchain:
         self.__chain.append(block)
         self.__open_transactions = []
         self.save_data_json()
-        return True
+        return block
