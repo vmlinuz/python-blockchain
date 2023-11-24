@@ -21,6 +21,7 @@ def create_keys():
             "message": "Keys created and saved.",
             "public_key": wallet.public_key,
             "private_key": wallet.private_key,
+            "funds": blockchain.get_balance(),
         }
         return jsonify(response), 201
     else:
@@ -38,6 +39,7 @@ def load_keys():
             "message": "Keys loaded.",
             "public_key": wallet.public_key,
             "private_key": wallet.private_key,
+            "funds": blockchain.get_balance(),
         }
         return jsonify(response), 201
     else:
@@ -45,16 +47,22 @@ def load_keys():
         return jsonify(response), 500
 
 
-@app.route("/", methods=["GET"])
-def get_ui():
-    return """
-    <h1>Blockchain</h1>
-    <p>Choose a transaction type:</p>
-    <ul>
-        <li><a href="/chain">Chain</a></li>
-        <li><a href="/wallet">Wallet</a></li>
-    </ul>
-    """
+@app.route("/balance", methods=["GET"])
+def get_balance():
+    """Gets and returns the balance of the sender's address."""
+    balance = blockchain.get_balance()
+    if balance is not None:
+        response = {
+            "message": "Fetched balance successfully.",
+            "funds": balance,
+        }
+        return jsonify(response), 200
+    else:
+        response = {
+            "message": "Loading balance failed.",
+            "wallet_set_up": wallet.public_key is not None,
+        }
+        return jsonify(response), 500
 
 
 @app.route("/mine", methods=["POST"])
@@ -67,6 +75,7 @@ def mine():
         response = {
             "message": "Block added successfully.",
             "block": dict_block,
+            "funds": blockchain.get_balance(),
         }
         return jsonify(response), 201
     else:
@@ -85,6 +94,20 @@ def get_chain():
     for dict_block in dict_chain:
         dict_block["transactions"] = [tx.__dict__ for tx in dict_block["transactions"]]
     return jsonify(dict_chain), 200
+
+
+@app.route("/", methods=["GET"])
+def get_ui():
+    """Returns the homepage."""
+    return """
+    <h1>Blockchain</h1>
+    <p>Choose a transaction type:</p>
+    <ul>
+        <li><a href="/balance">Balance</a></li>
+        <li><a href="/chain">Chain</a></li>
+        <li><a href="/wallet">Wallet</a></li>
+    </ul>
+    """
 
 
 if __name__ == "__main__":
