@@ -10,7 +10,6 @@ class Wallet:
     def __init__(self):
         self.private_key = None
         self.public_key = None
-        self._balance = 0
 
     def create_keys(self):
         self.private_key, self.public_key = self.generate_keys()
@@ -64,12 +63,3 @@ class Wallet:
             ).encode("utf8")
         )
         return verifier.verify(h, binascii.unhexlify(transaction.signature))
-
-    def deposit(self, amount):
-        self._balance += amount
-
-    def withdraw(self, amount):
-        self._balance -= amount
-
-    def get_balance(self):
-        return self._balance
