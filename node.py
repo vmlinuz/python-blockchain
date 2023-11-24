@@ -10,6 +10,21 @@ blockchain = Blockchain(wallet.public_key)
 CORS(app)
 
 
+@app.route("/", methods=["GET"])
+def get_ui():
+    """Returns the homepage."""
+    return """
+    <h1>Blockchain</h1>
+    <p>Choose a transaction type:</p>
+    <ul>
+        <li><a href="/balance">Balance</a></li>
+        <li><a href="/chain">Chain</a></li>
+        <li><a href="/wallet">Wallet</a></li>
+        <li><a href="/transactions">Open transactions</a></li>
+    </ul>
+    """
+
+
 @app.route("/wallet", methods=["POST"])
 def create_keys():
     """Creates a new pair of private and public keys."""
@@ -119,6 +134,14 @@ def mine():
         return jsonify(response), 500
 
 
+@app.route("/transactions", methods=["GET"])
+def get_open_transactions():
+    """Gets and returns the open transactions."""
+    transactions = blockchain.open_transactions
+    dict_transactions = [tx.__dict__ for tx in transactions]
+    return jsonify(dict_transactions), 200
+
+
 @app.route("/chain", methods=["GET"])
 def get_chain():
     """Returns the full blockchain and its current length."""
@@ -127,20 +150,6 @@ def get_chain():
     for dict_block in dict_chain:
         dict_block["transactions"] = [tx.__dict__ for tx in dict_block["transactions"]]
     return jsonify(dict_chain), 200
-
-
-@app.route("/", methods=["GET"])
-def get_ui():
-    """Returns the homepage."""
-    return """
-    <h1>Blockchain</h1>
-    <p>Choose a transaction type:</p>
-    <ul>
-        <li><a href="/balance">Balance</a></li>
-        <li><a href="/chain">Chain</a></li>
-        <li><a href="/wallet">Wallet</a></li>
-    </ul>
-    """
 
 
 if __name__ == "__main__":
