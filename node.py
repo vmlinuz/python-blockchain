@@ -65,6 +65,39 @@ def get_balance():
         return jsonify(response), 500
 
 
+@app.route("/transaction", methods=["POST"])
+def add_transaction():
+    """Adds a transaction to the open transactions list."""
+    if wallet.public_key is None:
+        response = {"message": "No wallet set up."}
+        return jsonify(response), 400
+    values = request.get_json()
+    if not values:
+        response = {"message": "No data found."}
+        return jsonify(response), 400
+    required_fields = ["recipient", "amount"]
+    if not all(field in values for field in required_fields):
+        response = {"message": "Required data is missing."}
+        return jsonify(response), 400
+    recipient, amount = values["recipient"], values["amount"]
+    signature = wallet.sign_transaction(wallet.public_key, recipient, amount)
+    if blockchain.add_transaction(recipient, wallet.public_key, signature, amount):
+        response = {
+            "message": "Successfully added transaction.",
+            "transaction": {
+                "sender": wallet.public_key,
+                "recipient": recipient,
+                "amount": amount,
+                "signature": signature,
+            },
+            "funds": blockchain.get_balance(),
+        }
+        return jsonify(response), 201
+    else:
+        response = {"message": "Creating a transaction failed."}
+        return jsonify(response), 500
+
+
 @app.route("/mine", methods=["POST"])
 def mine():
     """Function to be called by the miner thread."""
