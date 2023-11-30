@@ -29,9 +29,9 @@ class Blockchain:
         self.__chain = [genesis_block]
         # Unhandled transactions
         self.__open_transactions = []
-        self.load_data_json()
         self.hosting_node = hosting_node_id
         self.__peer_nodes = set()
+        self.load_data_json()
 
     @property
     def chain(self):
