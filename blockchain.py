@@ -4,6 +4,8 @@ import functools
 import json
 import pickle
 
+import requests
+
 from block import Block
 from transaction import Transaction
 from utility.hash_util import hash_block
@@ -158,11 +160,14 @@ class Blockchain:
             proof += 1
         return proof
 
-    def get_balance(self):
+    def get_balance(self, sender=None):
         """Calculate and return the balance for a participant."""
-        if self.public_key is None:
-            return None
-        participant = self.public_key
+        if sender is None:
+            if self.public_key is None:
+                return None
+            participant = self.public_key
+        else:
+            participant = sender
         # Fetch a list of all sent coin amounts for the given person (empty lists are returned if the person was NOT the
         # sender) This fetches sent amounts of transactions that were already included in blocks of the blockchain
         tx_sender = [
@@ -205,7 +210,9 @@ class Blockchain:
             return None
         return self.__chain[-1]
 
-    def add_transaction(self, recipient, sender, signature, amount=1.0):
+    def add_transaction(
+        self, recipient, sender, signature, amount=1.0, is_receiving=False
+    ):
         """Append a new value as well as the last blockchain value to the blockchain
 
         Arguments:
@@ -225,6 +232,24 @@ class Blockchain:
         if Verification.verify_transaction(transaction, self.get_balance):
             self.__open_transactions.append(transaction)
             self.save_data_json()
+            if not is_receiving:
+                for node in self.__peer_nodes:
+                    url = f"http://{node}/broadcast-transaction"
+                    try:
+                        response = requests.post(
+                            url,
+                            json={
+                                "sender": sender,
+                                "recipient": recipient,
+                                "amount": amount,
+                                "signature": signature,
+                            },
+                        )
+                        if response.status_code == 400 or response.status_code == 500:
+                            print("Transaction declined, needs resolving")
+                            return False
+                    except requests.exceptions.ConnectionError:
+                        continue
             return True
         return False
 
