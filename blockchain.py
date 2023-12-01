@@ -13,24 +13,23 @@ from wallet import Wallet
 # The reward we give to miners (for creating a new block)
 MINING_REWARD = 10
 
-blockchain_file_text = "blockchain.txt"
-blockchain_file_pickle = "blockchain.pickle"
-
 
 class Blockchain:
     """The Blockchain class manages the chain of blocks as well as open transactions and the node on which it's
     running.
     """
 
-    def __init__(self, hosting_node_id):
+    def __init__(self, public_key, node_id):
         # Our starting block for the blockchain
         genesis_block = Block(0, "", [], 100, 0)
         # Initializing our (empty) blockchain list
         self.__chain = [genesis_block]
         # Unhandled transactions
         self.__open_transactions = []
-        self.hosting_node = hosting_node_id
+        self.public_key = public_key
         self.__peer_nodes = set()
+        self.blockchain_file_text = f"blockchain-{node_id}.txt"
+        self.blockchain_file_pickle = f"blockchain-{node_id}.pickle"
         self.load_data_json()
 
     @property
@@ -56,7 +55,7 @@ class Blockchain:
     def load_data_json(self):
         """Initializes blockchain + open transactions data from a file."""
         try:
-            with open(blockchain_file_text, mode="r") as f:
+            with open(self.blockchain_file_text, mode="r") as f:
                 file_content = f.readlines()
                 orig_blockchain = json.loads(file_content[0][:-1])
                 orig_open_transactions = json.loads(file_content[1][:-1])
@@ -93,22 +92,26 @@ class Blockchain:
                 peer_nodes = json.loads(file_content[2])
                 self.__peer_nodes = set(peer_nodes)
         except (IOError, IndexError) as e:
-            print(f"Exception accessing file {blockchain_file_text} encountered: {e}")
+            print(
+                f"Exception accessing file {self.blockchain_file_text} encountered: {e}"
+            )
 
     def load_data_pickle(self):
         """Initializes blockchain + open transactions data from a file."""
         try:
-            with open(blockchain_file_pickle, mode="rb") as f:
+            with open(self.blockchain_file_pickle, mode="rb") as f:
                 file_content = pickle.loads(f.read())
                 self.__chain = file_content["blockchain"]
                 self.__open_transactions = file_content["open_transactions"]
         except (IOError, IndexError) as e:
-            print(f"Exception accessing file {blockchain_file_pickle} encountered: {e}")
+            print(
+                f"Exception accessing file {self.blockchain_file_pickle} encountered: {e}"
+            )
 
     def save_data_json(self):
         """Saves blockchain + open transactions snapshot to a file."""
         try:
-            with open(blockchain_file_text, mode="w") as f:
+            with open(self.blockchain_file_text, mode="w") as f:
                 saveable_blockchain = [
                     block.__dict__
                     for block in [
@@ -129,19 +132,19 @@ class Blockchain:
                 f.write("\n")
                 f.write(json.dumps(list(self.__peer_nodes)))
         except IOError as e:
-            print(f"Saving file {blockchain_file_text} failed: {e}")
+            print(f"Saving file {self.blockchain_file_text} failed: {e}")
 
     def save_data_pickle(self):
         """Saves blockchain + open transactions snapshot to a file."""
         try:
-            with open(blockchain_file_pickle, mode="wb") as f:
+            with open(self.blockchain_file_pickle, mode="wb") as f:
                 save_data = {
                     "blockchain": self.__chain,
                     "open_transactions": self.__open_transactions,
                 }
                 f.write(pickle.dumps(save_data))
         except IOError as e:
-            print(f"Saving file {blockchain_file_pickle} failed: {e}")
+            print(f"Saving file {self.blockchain_file_pickle} failed: {e}")
 
     def proof_of_work(self):
         """Generate a proof of work for the open transactions, the hash of the previous block and a random number
@@ -157,9 +160,9 @@ class Blockchain:
 
     def get_balance(self):
         """Calculate and return the balance for a participant."""
-        if self.hosting_node is None:
+        if self.public_key is None:
             return None
-        participant = self.hosting_node
+        participant = self.public_key
         # Fetch a list of all sent coin amounts for the given person (empty lists are returned if the person was NOT the
         # sender) This fetches sent amounts of transactions that were already included in blocks of the blockchain
         tx_sender = [
@@ -216,7 +219,7 @@ class Blockchain:
         #     "recipient": recipient,
         #     "amount": amount
         # }
-        if self.hosting_node is None:
+        if self.public_key is None:
             return False
         transaction = Transaction(sender, recipient, signature, amount)
         if Verification.verify_transaction(transaction, self.get_balance):
@@ -228,14 +231,14 @@ class Blockchain:
     def mine_block(self):
         """Create a new block and add open transactions to it."""
         # Fetch the currently last block of the blockchain
-        if self.hosting_node is None:
+        if self.public_key is None:
             return None
         last_block = self.get_last_blockchain_value()
         # Hash the last block (=> to be able to compare it to the stored hash value)
         hashed_block = hash_block(last_block)
         proof = self.proof_of_work()
         # Miners should be rewarded, so let's create a reward transaction
-        reward_transaction = Transaction("MINING", self.hosting_node, "", MINING_REWARD)
+        reward_transaction = Transaction("MINING", self.public_key, "", MINING_REWARD)
         # Copy transaction instead of manipulating the original open_transactions list
         # This ensures that if for some reason the mining should fail, we don't have the reward transaction stored in the
         # open transactions
