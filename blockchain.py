@@ -22,6 +22,7 @@ class Blockchain:
     """
 
     def __init__(self, public_key, node_id):
+        """The constructor for the Blockchain class."""
         # Our starting block for the blockchain
         genesis_block = Block(0, "", [], 100, 0)
         # Initializing our (empty) blockchain list
@@ -32,6 +33,7 @@ class Blockchain:
         self.__peer_nodes = set()
         self.blockchain_file_text = f"blockchain-{node_id}.txt"
         self.blockchain_file_pickle = f"blockchain-{node_id}.pickle"
+        self.resolve_conflicts = False
         self.load_data_json()
 
     @property
@@ -281,7 +283,106 @@ class Blockchain:
         self.__chain.append(block)
         self.__open_transactions = []
         self.save_data_json()
+        for node in self.__peer_nodes:
+            url = f"http://{node}/broadcast-block"
+            converted_block = block.__dict__.copy()
+            converted_block["transactions"] = [
+                tx.__dict__ for tx in converted_block["transactions"]
+            ]
+            try:
+                response = requests.post(url, json={"block": converted_block})
+                if response.status_code == 400 or response.status_code == 500:
+                    print("Block declined, needs resolving")
+                if response.status_code == 409:
+                    self.resolve_conflicts = True
+            except requests.exceptions.ConnectionError:
+                continue
         return block
+
+    def add_block(self, block):
+        """Adds a block mined by someone else to the local blockchain."""
+        transactions = [
+            Transaction(
+                tx["sender"],
+                tx["recipient"],
+                tx["signature"],
+                tx["amount"],
+            )
+            for tx in block["transactions"]
+        ]
+        proof_is_valid = Verification.valid_proof(
+            transactions[:-1], block["previous_hash"], block["proof"]
+        )
+        hashes_match = hash_block(self.chain[-1]) == block["previous_hash"]
+        if not proof_is_valid or not hashes_match:
+            return False
+        converted_block = Block(
+            block["index"],
+            block["previous_hash"],
+            transactions,
+            block["proof"],
+            block["timestamp"],
+        )
+        self.__chain.append(converted_block)
+        stored_transactions = self.__open_transactions[:]
+        for incoming_tx in block["transactions"]:
+            for open_tx in stored_transactions:
+                if (
+                    open_tx.sender == incoming_tx["sender"]
+                    and open_tx.recipient == incoming_tx["recipient"]
+                    and open_tx.amount == incoming_tx["amount"]
+                    and open_tx.signature == incoming_tx["signature"]
+                ):
+                    try:
+                        self.__open_transactions.remove(open_tx)
+                    except ValueError:
+                        print("Item was already removed")
+        self.save_data_json()
+        return True
+
+    def resolve(self):
+        """Resolves conflicts between blockchain nodes by replacing our chain with the longest one in the network."""
+        winner_chain = self.chain
+        replace = False
+        for node in self.__peer_nodes:
+            url = f"http://{node}/chain"
+            try:
+                response = requests.get(url)
+                node_chain = response.json()
+                node_chain = [
+                    Block(
+                        block["index"],
+                        block["previous_hash"],
+                        [
+                            Transaction(
+                                tx["sender"],
+                                tx["recipient"],
+                                tx["signature"],
+                                tx["amount"],
+                            )
+                            for tx in block["transactions"]
+                        ],
+                        block["proof"],
+                        block["timestamp"],
+                    )
+                    for block in node_chain
+                ]
+                node_chain_length = len(node_chain)
+                local_chain_length = len(winner_chain)
+                if (
+                    node_chain_length > local_chain_length
+                    and Verification.verify_chain(node_chain)
+                ):
+                    winner_chain = node_chain
+                    replace = True
+            except requests.exceptions.ConnectionError:
+                continue
+        self.resolve_conflicts = False
+        self.__chain = winner_chain
+        if replace:
+            self.__open_transactions = []
+        self.save_data_json()
+        return replace
 
     def add_peer_node(self, node):
         """Adds a new node to the peer node set.
